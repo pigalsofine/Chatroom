@@ -59,16 +59,14 @@ int main(int argc, char *argv[])
 
             if (n == 0 && fd == client_sockfd) {                       //读到0,说明客户端关闭链接
 
-
+                return 0;
 
             } else if (n < 0) {                 //出错
                 perror("read n < 0 error: ");
                 res = epoll_ctl(efd, EPOLL_CTL_DEL, client_sockfd, NULL);
                 Close(client_sockfd);
-                return 0;
 
             } else {                            //实际读到了字节数
-
                 if (fd == client_sockfd) {
                     Write(STDOUT_FILENO, buf, n);
                 } else {

@@ -68,7 +68,8 @@ int Socket(int family, int type, int protocol)
     return n;
 }
 
-ssize_t Read(int fd, void *ptr, size_t nbytes)
+ssize_t
+Read(int fd, void *ptr, size_t nbytes)
 {
     ssize_t n;
 

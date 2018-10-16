@@ -11,6 +11,7 @@
 #include <map>
 #include <csignal>
 #include "wrap.h"
+#include "threadpool.h"
 
 using namespace std;
 
@@ -19,6 +20,20 @@ using namespace std;
 #define OPEN_MAX 5000
 
 map<int,string> all_fd;
+struct send_msg{
+    int socket;
+    string msg;
+};
+
+void* start_thread(void* args)
+{
+    send_msg tmp_send_msg = *((struct send_msg*)args);
+
+    const char* pbuf = tmp_send_msg.msg.data();
+
+    Writen(tmp_send_msg.socket, pbuf, strlen(pbuf));
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -30,6 +45,9 @@ int main(int argc, char *argv[])
     socklen_t clilen;
 
     string tmp;
+
+    struct threadpool *pool = threadpool_init(10, 20);
+    pthread_t ntid;
 
     struct sockaddr_in cliaddr, servaddr;
     struct epoll_event tep, ep[OPEN_MAX];       //tep: epoll_ctl参数  ep[] : epoll_wait参数
@@ -112,7 +130,9 @@ int main(int argc, char *argv[])
 
                     map<int,string>::iterator iter;
 
+
                     for (iter = all_fd.begin(); iter != all_fd.end(); iter++){
+
 
                         if (iter->first != sockfd){
 
@@ -120,19 +140,23 @@ int main(int argc, char *argv[])
 
                             cout << "tmp "<< tmp<<"\n";
 
-                            const char* pbuf = tmp.data();
+                         //   const char* pbuf = tmp.data();
 
-                            cout << "pbuf "<< pbuf<<"\n";
+                            send_msg *tmp_send_msg = new  send_msg();
+                            tmp_send_msg->socket = iter->first;
+                            tmp_send_msg->msg = tmp;
 
-                            Writen(iter->first, pbuf, strlen(pbuf));
+                            threadpool_add_job(pool, start_thread, (void*)tmp_send_msg);
+
+                         //   cout << "pbuf "<< pbuf<<"\n";
+
+
+
+                          //  Writen(iter->first, pbuf, strlen(pbuf));
                         }
                     }
                 }
             }
         }
     }
-    Close(listenfd);
-    Close(efd);
-
-    return 0;
 }
